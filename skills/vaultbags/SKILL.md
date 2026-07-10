@@ -40,7 +40,11 @@ The OpenAPI 3.1 spec for all of the above: `GET /api/openapi`. Discovery text: `
 
 ## Ask the analyst (natural language)
 
-`POST /api/agent/ask` with JSON `{"question":"<3-500 chars>"}` returns a natural-language answer grounded in the same read-only data. Free lane is rate-limited per caller per day. When exhausted (and the paid lane is live) the endpoint answers HTTP 402 with x402 payment requirements (USDC on Solana, commit-reveal memo binding); `GET /api/agent/ask` shows those requirements without spending anything. One settled payment buys exactly one answer, and paying callers get rolling conversation memory. Pricing: `https://vaultbags.app/pricing`.
+`POST /api/agent/ask` with JSON `{"question":"<3-500 chars>"}` returns a natural-language answer grounded in the same read-only data. Free lane is rate-limited per caller per day. When exhausted (and the paid lane is live) the endpoint answers HTTP 402 with x402 payment requirements (USDC on Solana, commit-reveal memo binding); `GET /api/agent/ask` shows those requirements without spending anything. The 402 `accepts[]` lists every option currently offered, including a prepaid credit pack when available: one payment mints a one-time credit token, spent on later calls via the `X-CREDIT-TOKEN` header with no further transactions. One settled payment buys exactly one answer (or one pack), and paying callers get rolling conversation memory. Pricing: `https://vaultbags.app/pricing`.
+
+## Paid data products (same x402 flow)
+
+`GET /api/agent/ledger`: the ledger, the complete receipted decision history (every daily allocation since inception with raw signals, convictions, drivers, rationale and its on-chain receipt) plus the brain-vs-flat and shadow measurement series, one machine-readable export. `GET /api/agent/rwa-registry-live`: every certified RWA with a live market read in one call. Both answer 402 with their exact requirements when called bare, and accept `X-PAYMENT` or `X-CREDIT-TOKEN`.
 
 ## Usage notes
 
