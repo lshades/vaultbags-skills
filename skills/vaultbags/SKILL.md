@@ -35,8 +35,15 @@ Prefer the REST mirror (plain GET, JSON back). The same tools are also served ov
 | `/api/agent/rwa-performance` | The vault's real cost basis and return per RWA position since purchase, in USD and SOL terms, from reconstructed on-chain swaps. |
 | `/api/agent/shadow-vs-brain` | The shadow language model's daily allocation calls measured against the deterministic brain. |
 | `/api/agent/recent-cycles?limit=5` | The latest distribution cycles with their on-chain receipts (limit 1-20). |
+| `/api/agent/monthly-reports?months=12` | The agent's closed books, one per calendar month, each committed on-chain (limit 1-24). |
+| `/api/agent/proof-of-reserves` | Proof of Reserves: the reserve wallets, their certified issuers and live on-chain balances, plus the decision receipts and value paid to holders. |
+| `/api/agent/verify-claim?tx=<sig>` | Verify one holder claim against the on-chain Merkle root: the committed record, its proof, the day's root, and the on-chain memo that stamped it. |
 
 The OpenAPI 3.1 spec for all of the above: `GET /api/openapi`. Discovery text: `GET /llms.txt`.
+
+## Verify a payout yourself (no trust required)
+
+Every holder claim is a leaf in a daily Merkle tree whose root is stamped on-chain. You verify a payout without trusting this API: `GET /api/proof/claim/<tx>` returns the claim's committed record, its Merkle proof, the day's root and the on-chain memo; `GET /api/proof/claims/<YYYY-MM-DD>` returns the full committed set so you can rebuild the root yourself and confirm nothing was hidden or altered. A self-contained script (no dependencies) does all three checks and points you at the on-chain memo: `curl -s https://vaultbags.app/verify-claim.mjs > verify-claim.mjs && node verify-claim.mjs <claim_tx>`.
 
 ## Ask the analyst (natural language)
 
