@@ -28,7 +28,7 @@ Prefer the REST mirror (plain GET, JSON back). The same tools are also served ov
 | `/api/agent/project-treasury?mint=<base58>` | One project's live treasury (claim/lock pools, USD values, split) by SPL token mint. |
 | `/api/agent/vault-docs` | Condensed protocol documentation and live surface links. |
 | `/api/agent/rwas?category=&issuer=` | The certified registry of openly transferable tokenized RWAs on Solana (gold, US Treasuries, US equities/ETFs), every mint verified against the issuer's own domain. Filters optional: `category` (gold, treasury, equity-index, equity), `issuer` (backed, ondo, oro). |
-| `/api/agent/rwa?query=AAPLx` | One certified RWA resolved by symbol or exact mint: verified identity plus a live market read. Use it to avoid impersonator mints. |
+| `/api/agent/rwa?query=HOODx` | One certified RWA resolved by symbol or exact mint: verified identity, a live market read, and for tokenized equities the underlying's oracle price plus the token's premium/discount (`premiumPct`). Use it to avoid impersonator mints. |
 | `/api/agent/protocol-meter` | The Meter: the protocol's consolidated live numbers (treasury value, lifetime throughput, decision receipts, agent earnings, locked supply), each section with its verification URL. |
 | `/api/agent/autonomy` | The vault agent's Autonomy Score and the verifiable facts behind it. |
 | `/api/agent/passport` | The agent's portable machine-readable passport (identity, capabilities, surfaces, receipts). |
