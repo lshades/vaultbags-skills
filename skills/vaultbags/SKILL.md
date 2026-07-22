@@ -19,7 +19,7 @@ Prefer the REST mirror (plain GET, JSON back). The same tools are also served ov
 | --- | --- |
 | `/api/agent/todays-allocation` | Today's buy proportions, the band, frozen flag, rationale, on-chain receipt tx + Solscan URL. |
 | `/api/agent/daily-briefing` | Today's public market briefing text, weights, receipt. |
-| `/api/agent/treasury-stats` | Live per-asset balances and USD values, total value, total paid to holders, holder count, cycles, fees processed. |
+| `/api/agent/treasury-stats` | Live per-asset balances and USD values, total value, total paid to holders, fees processed. `holdersCount` and `cyclesCount` are $VAULT's own; `protocolHoldersTracked` and `protocolCyclesExecuted` span every project integrated with the protocol. Locking is reported as two separate numbers on purpose: `activeLocks` counts lock contracts and `uniqueLockers` counts the wallets holding them, since one wallet can hold several contracts. |
 | `/api/agent/decision-history?days=N` | Recent daily decisions with weights, rationale and receipts (N: 1-30, default 14). |
 | `/api/agent/market-signals` | The quantitative signals behind today's allocation with per-asset reads (bullish/bearish/neutral), convictions and weights. |
 | `/api/agent/brain-vs-flat` | Honest track record: the daily line versus a fixed even split, the edge reported win or lose. |
