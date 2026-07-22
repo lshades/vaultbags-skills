@@ -13,7 +13,7 @@ Everything below is read-only public data. There is no API key, no auth, no rate
 
 Base URL: `https://vaultbags.app`
 
-Prefer the REST mirror (plain GET, JSON back). The same tools are also served over MCP (Streamable HTTP, JSON-RPC 2.0) at `POST /api/mcp` for MCP-native clients.
+Prefer the REST mirror (plain GET, JSON back). The same tools are also served over MCP (Streamable HTTP, JSON-RPC 2.0) at `POST /api/mcp` for MCP-native clients. The MCP server also exposes prompts (one-click actions like `verify_payout` and `audit_agent`) and resources (addressable read-only snapshots like `vaultbags://proof/reserves`), so an MCP client shows a menu, not just a tool list.
 
 | GET path | Returns |
 | --- | --- |
