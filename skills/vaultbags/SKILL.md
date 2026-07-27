@@ -55,6 +55,16 @@ Payouts describe what already happened; the decision receipt covers what the age
 
 `POST /api/agent/ask` with JSON `{"question":"<3-500 chars>"}` returns a natural-language answer grounded in the same read-only data. Free lane is rate-limited per caller per day. When exhausted (and the paid lane is live) the endpoint answers HTTP 402 with x402 payment requirements (USDC on Solana, commit-reveal memo binding); `GET /api/agent/ask` shows those requirements without spending anything. The 402 `accepts[]` lists every option currently offered, including a prepaid credit pack when available: one payment mints a one-time credit token, spent on later calls via the `X-CREDIT-TOKEN` header with no further transactions. One settled payment buys exactly one answer (or one pack), and paying callers get rolling conversation memory. Pricing: `https://vaultbags.app/pricing`.
 
+## Install it in one line
+
+`claude mcp add --transport http vaultbags https://vaultbags.app/api/mcp`
+
+For a client that takes a config file, the same server is two fields. The `type` is required: an entry with a `url` and no `type` is read as a local command and skipped.
+
+```json
+{ "mcpServers": { "vaultbags": { "type": "http", "url": "https://vaultbags.app/api/mcp" } } }
+```
+
 ## Use it from an OpenAI-compatible client
 
 Already speak the OpenAI chat API? Point any client at base URL `https://vaultbags.app/api/v1` with model `vaultbags-agent` (Cursor, Cline, Continue, the `openai` SDK). `GET /api/v1/models` lists it.
