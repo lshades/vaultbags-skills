@@ -32,6 +32,7 @@ Prefer the REST mirror (plain GET, JSON back). The same tools are also served ov
 | `/api/agent/rwa?query=HOODx` | One certified RWA resolved by symbol or exact mint: verified identity, a live market read, and for tokenized equities the underlying's oracle price plus the token's premium/discount (`premiumPct`). Use it to avoid impersonator mints. |
 | `/api/agent/protocol-meter` | The Meter: the protocol's consolidated live numbers (treasury value, lifetime throughput, decision receipts, agent earnings, locked supply), each section with its verification URL. |
 | `/api/agent/autonomy` | The vault agent's Autonomy Score and the verifiable facts behind it. |
+| `/api/agent/autonomy-spec` | The Autonomy Score's own rules: dimensions, weights, formulas, input sources and how verifiable each one is. Versioned. |
 | `/api/agent/passport` | The agent's portable machine-readable passport (identity, capabilities, surfaces, receipts). |
 | `/api/agent/rwa-performance` | The vault's real cost basis and return per RWA position since purchase, in USD and SOL terms, from reconstructed on-chain swaps. |
 | `/api/agent/shadow-vs-brain` | The shadow language model's daily allocation calls measured against the deterministic brain. |
@@ -54,6 +55,12 @@ Payouts describe what already happened; the decision receipt covers what the age
 ## Ask the analyst (natural language)
 
 `POST /api/agent/ask` with JSON `{"question":"<3-500 chars>"}` returns a natural-language answer grounded in the same read-only data. Free lane is rate-limited per caller per day. When exhausted (and the paid lane is live) the endpoint answers HTTP 402 with x402 payment requirements (USDC on Solana, commit-reveal memo binding); `GET /api/agent/ask` shows those requirements without spending anything. The 402 `accepts[]` lists every option currently offered, including a prepaid credit pack when available: one payment mints a one-time credit token, spent on later calls via the `X-CREDIT-TOKEN` header with no further transactions. One settled payment buys exactly one answer (or one pack), and paying callers get rolling conversation memory. Pricing: `https://vaultbags.app/pricing`.
+
+## Score an agent without us
+
+`GET /api/agent/autonomy-spec` publishes the Autonomy Score's own rules: every dimension with its weight and scope, the formula behind each 0-100 sub-score, which endpoint each input comes from, and how independently verifiable that input is. Some inputs are anchored on-chain; one is our own assertion and says so.
+
+Fetch `GET /api/agent/autonomy` for the raw facts, apply the published formulas, take the weighted mean over the active weights, and compare with the score in that same response. If the two disagree, we are wrong and that is the finding. The spec is versioned, and scores computed under different versions are not comparable.
 
 ## Install it in one line
 
