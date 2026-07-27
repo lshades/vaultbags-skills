@@ -39,12 +39,17 @@ Prefer the REST mirror (plain GET, JSON back). The same tools are also served ov
 | `/api/agent/monthly-reports?months=12` | The agent's closed books, one per calendar month, each committed on-chain (limit 1-24). |
 | `/api/agent/proof-of-reserves` | Proof of Reserves: the reserve wallets, their certified issuers and live on-chain balances, plus the decision receipts and value paid to holders. |
 | `/api/agent/verify-claim?tx=<sig>` | Verify one holder claim against the on-chain Merkle root: the committed record, its proof, the day's root, and the on-chain memo that stamped it. |
+| `/api/agent/verify-decision?date=<YYYY-MM-DD>` | Verify one daily allocation decision against the hash stamped on-chain that day: the payload the receipt commits to, both hashes, the anchoring transaction, and the wallet that must have signed it. Omit `date` for today. |
 
 The OpenAPI 3.1 spec for all of the above: `GET /api/openapi`. Discovery text: `GET /llms.txt`.
 
 ## Verify a payout yourself (no trust required)
 
 Every holder claim is a leaf in a daily Merkle tree whose root is stamped on-chain. You verify a payout without trusting this API: `GET /api/proof/claim/<tx>` returns the claim's committed record, its Merkle proof, the day's root and the on-chain memo; `GET /api/proof/claims/<YYYY-MM-DD>` returns the full committed set so you can rebuild the root yourself and confirm nothing was hidden or altered. A self-contained script (no dependencies) does all three checks and points you at the on-chain memo: `curl -s https://vaultbags.app/verify-claim.mjs > verify-claim.mjs && node verify-claim.mjs <claim_tx>`.
+
+## Verify the decision itself (no trust required)
+
+Payouts describe what already happened; the decision receipt covers what the agent chose to do, before it acted. Each UTC day the frozen allocation is hashed and stamped on-chain in a treasury-signed memo. `GET /api/proof/decision/<YYYY-MM-DD>` returns the exact payload that hash commits to (the date, the three weights, and the market signals the model read), the hash recomputed live from the stored record, the hash written at stamping time, the anchoring transaction, and the wallet that must have signed it; `GET /api/proof/decisions` indexes the days on record and marks which carry an anchor. Serialize the payload canonically (sort object keys recursively, keep arrays in order, skip undefined, serialize primitives with `JSON.stringify`) and sha256 the UTF-8 string: it must equal the stamped hash, and the memo read from Solana must end in that same digest and be signed by the published treasury wallet. A memo signed by any other wallet proves nothing. A self-contained script does it end to end and reads the anchor straight from an RPC of your choosing: `curl -s https://vaultbags.app/verify-decision.mjs > verify-decision.mjs && node verify-decision.mjs <YYYY-MM-DD>`.
 
 ## Ask the analyst (natural language)
 
