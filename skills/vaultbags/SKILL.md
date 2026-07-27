@@ -55,6 +55,12 @@ Payouts describe what already happened; the decision receipt covers what the age
 
 `POST /api/agent/ask` with JSON `{"question":"<3-500 chars>"}` returns a natural-language answer grounded in the same read-only data. Free lane is rate-limited per caller per day. When exhausted (and the paid lane is live) the endpoint answers HTTP 402 with x402 payment requirements (USDC on Solana, commit-reveal memo binding); `GET /api/agent/ask` shows those requirements without spending anything. The 402 `accepts[]` lists every option currently offered, including a prepaid credit pack when available: one payment mints a one-time credit token, spent on later calls via the `X-CREDIT-TOKEN` header with no further transactions. One settled payment buys exactly one answer (or one pack), and paying callers get rolling conversation memory. Pricing: `https://vaultbags.app/pricing`.
 
+## Use it from an OpenAI-compatible client
+
+Already speak the OpenAI chat API? Point any client at base URL `https://vaultbags.app/api/v1` with model `vaultbags-agent` (Cursor, Cline, Continue, the `openai` SDK). `GET /api/v1/models` lists it.
+
+It is a facade, not a second door: every request forwards to `/api/agent/ask`, so the lanes, the daily limits, the x402 settlement and the prompt-injection filter are the same ones described above. The API key field is optional and is passed through, so a VaultBags session token there buys a holder's higher allowance; a placeholder key is harmless. Streaming is not supported yet and is refused explicitly rather than faked, and `usage` is reported only when the agent actually returned token counts.
+
 ## Paid data products (same x402 flow)
 
 `GET /api/agent/ledger`: the ledger, the complete receipted decision history (every daily allocation since inception with raw signals, convictions, drivers, rationale and its on-chain receipt) plus the brain-vs-flat and shadow measurement series, one machine-readable export. `GET /api/agent/rwa-registry-live`: every certified RWA with a live market read in one call. Both answer 402 with their exact requirements when called bare, and accept `X-PAYMENT` or `X-CREDIT-TOKEN`.
