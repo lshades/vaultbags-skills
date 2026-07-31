@@ -40,6 +40,8 @@ Prefer the REST mirror (plain GET, JSON back). The same tools are also served ov
 | `/api/agent/monthly-reports?months=12` | The agent's closed books, one per calendar month, each committed on-chain (limit 1-24). |
 | `/api/agent/proof-of-reserves` | Proof of Reserves: the reserve wallets, their certified issuers and live on-chain balances, plus the decision receipts and value paid to holders. |
 | `/api/agent/verify-claim?tx=<sig>` | Verify one holder claim against the on-chain Merkle root: the committed record, its proof, the day's root, and the on-chain memo that stamped it. |
+| `/api/agent/lock-boost?amount=<N>` | Lock boost estimate with live data: current % of circulating locked, the shared multiplier (the payout formula, capped 1.5x), and both values after locking N more tokens. Omit `amount` for the current state. |
+| `/api/agent/verify-day?period=<YYYY-MM-DD>` | Verify a whole day of the claim ledger: every committed claim, the root rebuilt live, the root stamped on Solana, whether they match, and the treasury signer to check. Omit `period` for the latest stamped day. |
 | `/api/agent/verify-decision?date=<YYYY-MM-DD>` | Verify one daily allocation decision against the hash stamped on-chain that day: the payload the receipt commits to, both hashes, the anchoring transaction, and the wallet that must have signed it. Omit `date` for today. |
 
 The OpenAPI 3.1 spec for all of the above: `GET /api/openapi`. Discovery text: `GET /llms.txt`.
