@@ -38,7 +38,12 @@ Prefer the REST mirror (plain GET, JSON back). The same tools are also served ov
 | `/api/agent/shadow-vs-brain` | The shadow language model's daily allocation calls measured against the deterministic brain. |
 | `/api/agent/recent-cycles?limit=5` | The latest distribution cycles with their on-chain receipts (limit 1-20). |
 | `/api/agent/monthly-reports?months=12` | The agent's closed books, one per calendar month, each committed on-chain (limit 1-24). |
-| `/api/agent/proof-of-reserves` | Proof of Reserves: the reserve wallets, their certified issuers and live on-chain balances, plus the decision receipts and value paid to holders. |
+| `/api/agent/proof-of-reserves` | Proof of Reserves: the reserve wallets, their certified issuers and their on-chain balances, plus the decision receipts and value paid to holders. Balances are read in one request and returned with the Solana `slot` they were read at, so the total is reproducible digit for digit rather than approximately; `reconciliation` reports any divergence instead of smoothing it. |
+| `/api/agent/treasury-history?days=<N>&points=<P>` | The treasury's value and per-asset balances over time. Samples are spread across the WHOLE window, not taken from its newest end, so a 90-day request describes 90 days. Descriptive history, never a projection. |
+| `/api/agent/holder-distribution` | How many distinct wallets hold the token (not token accounts; protocol wallets and pools excluded), how that changed over a day and a week, how many are locking, and how concentrated supply is across the largest wallets. Aggregates only, no addresses. Concentration is null rather than approximated when the scan behind it could not complete. |
+| `/api/agent/recent-activity` | Recent trading in aggregate for the last day and week: trades, buys, sells, and distinct buyers, sellers and traders. `truncated` marks a window whose counts are a floor rather than a total. |
+| `/api/agent/payout-integrity` | Every holder payout ever recorded, looked up on Solana and counted: confirmed by the chain, rejected by it, or no longer carried in the answering node's history. Recomputed on read, so it never goes stale. `allLanded` is true only when every payout was found AND accepted, because "not found" is a fact about the node and never counts as success. If the ledger or the chain cannot be read in full, no partial figure is served. |
+| `/api/agent/lock-tier?days=<N>&wallet=<addr>` | The tier a lock term reaches, and the tier a wallet currently holds. Both parameters optional and independent; with neither, the tier table. The tier comes from the TERM signed for, measured from the lock's on-chain creation to its unlock. It is derived on read, never stored, and grants nothing: the boost multiplier does not read it, and the same term reaches the same tier at any balance. |
 | `/api/agent/verify-claim?tx=<sig>` | Verify one holder claim against the on-chain Merkle root: the committed record, its proof, the day's root, and the on-chain memo that stamped it. |
 | `/api/agent/lock-boost?amount=<N>` | Lock boost estimate with live data: current % of circulating locked, the shared multiplier (the payout formula, capped 1.5x), and both values after locking N more tokens. Omit `amount` for the current state. |
 | `/api/agent/verify-day?period=<YYYY-MM-DD>` | Verify a whole day of the claim ledger: every committed claim, the root rebuilt live, the root stamped on Solana, whether they match, and the treasury signer to check. Omit `period` for the latest stamped day. |
@@ -55,6 +60,48 @@ The monthly closed books verify the same way: `GET /api/reports/<YYYY-MM-01>` re
 ## Verify the decision itself (no trust required)
 
 Payouts describe what already happened; the decision receipt covers what the agent chose to do, before it acted. Each UTC day the frozen allocation is hashed and stamped on-chain in a treasury-signed memo. `GET /api/proof/decision/<YYYY-MM-DD>` returns the exact payload that hash commits to (the date, the three weights, and the market signals the model read), the hash recomputed live from the stored record, the hash written at stamping time, the anchoring transaction, and the wallet that must have signed it; `GET /api/proof/decisions` indexes the days on record and marks which carry an anchor. Serialize the payload canonically (sort object keys recursively, keep arrays in order, skip undefined, serialize primitives with `JSON.stringify`) and sha256 the UTF-8 string: it must equal the stamped hash, and the memo read from Solana must end in that same digest and be signed by the published treasury wallet. A memo signed by any other wallet proves nothing. A self-contained script does it end to end and reads the anchor straight from an RPC of your choosing: `curl -s https://vaultbags.app/verify-decision.mjs > verify-decision.mjs && node verify-decision.mjs <YYYY-MM-DD>`.
+
+## Act for a holder, without ever touching their keys
+
+Everything above is public and needs no credentials. To answer questions about a
+SPECIFIC holder ("what can I claim right now", "when does my lock end"), you do
+not ask for their wallet and you never receive their keys. The holder delegates
+to a burner wallet you control.
+
+1. The holder signs a delegation naming your burner as their delegate. Nothing
+   about it grants authority over their tokens: it is an off-chain signature (or
+   a dust transfer they send themselves), recorded and revocable.
+2. Your burner signs in normally (Sign-In With Solana) and gets a session token.
+3. You call the holder endpoints with that token. The server resolves WHOSE data
+   this is from the stored delegation and never from anything you send it, so a
+   wallet address in your request cannot redirect the answer.
+
+What a delegation carries, and what it refuses:
+
+- **claim** is always granted, because claiming is what delegation is for.
+- **intelligence** (the holder's own dashboard) is granted by default.
+- **governance** and **raffle** are OFF unless the holder signed for them, so an
+  agent does not vote or enter draws on somebody's behalf by accident.
+- Creating governance proposals and any creator or admin operation are NOT
+  delegable at all, by any means.
+
+If you are an agent rather than a person, say so when you request the
+delegation. An agent delegation is signed scope by scope: the holder reads a
+line per permission and signs that exact text, and the server stores what they
+signed. When the delegation is confirmed, the permissions are copied from that
+stored record and never from anything sent at confirmation time, so what was
+signed is what is enforced. Agents get claim and intelligence; governance and
+raffle require the holder to have signed for them explicitly. Only the signed
+message flow supports this, because a payment cannot express a list of scopes.
+
+The guard that matters is on the money, not on the paperwork: for a claim, the
+destination is always the holder's own wallet, derived on the server and bound
+to the exact transaction they approved. Your burner pays the gas and the account
+rent, and cannot receive the assets even if it builds the request itself.
+
+The holder is never locked in. They can revoke with their own signature at any
+time, without your cooperation and without connecting to anything you control,
+and delegating to somebody else revokes you automatically.
 
 ## Ask the analyst (natural language)
 
