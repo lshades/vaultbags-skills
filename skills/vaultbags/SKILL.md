@@ -21,6 +21,7 @@ Match the intent, go straight to the path. Detail for each lives in the section 
 - Run the allocation model on MY inputs -> `GET /api/agent/simulate?...`
 - Which certified RWAs exist on Solana? -> `GET /api/agent/rwas` (and `/api/agent/rwa?query=` for one)
 - Ask a free-form question -> `POST /api/agent/ask` (Ask the analyst)
+- Prove a paid call happened -> the `X-X402-Receipt` header, checked against `GET /.well-known/jwks.json` (Paid data products)
 - Act for a holder with a burner, no keys -> Act for a holder, without ever touching their keys
 - The whole machine contract at once -> `GET /api/openapi`; MCP menu at `POST /api/mcp`
 
@@ -157,6 +158,8 @@ It is a facade, not a second door: every request forwards to `/api/agent/ask`, s
 ## Paid data products (same x402 flow)
 
 `GET /api/agent/ledger`: the ledger, the complete receipted decision history (every daily allocation since inception with raw signals, convictions, drivers, rationale and its on-chain receipt) plus the brain-vs-flat and shadow measurement series, one machine-readable export. `GET /api/agent/rwa-registry-live`: every certified RWA with a live market read in one call. Both answer 402 with their exact requirements when called bare, and accept `X-PAYMENT` or `X-CREDIT-TOKEN`.
+
+Every response settled on-chain (ask, the ledger, the registry batch) carries an `X-X402-Receipt` header: a short RS256 JWT stating what was paid (`tx_hash`, `payer_wallet`, `amount` in USDC atomic units, `pay_to`, `asset`, `resource`, `network`, a unique `jti`, `exp`), signed by the vault and verifiable offline against `GET /.well-known/jwks.json` with no call back to the vault. The on-chain transaction stays the source of truth; the receipt is its portable, signed wrapper. `npx vaultbags-cli verify receipt <jwt>` checks the signature, the claims, and asks the chain that the transfer actually landed where the receipt says. Credit spends carry no receipt (there is no per-call transaction to point at).
 
 ## Usage notes
 
