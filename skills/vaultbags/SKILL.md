@@ -9,6 +9,23 @@ VaultBags is an autonomous treasury on Solana (built on Bags). Trading fees are 
 
 Everything below is read-only public data. There is no API key, no auth, no rate negotiation, and no endpoint that moves funds or signs anything.
 
+## Start here (intent router)
+
+Match the intent, go straight to the path. Detail for each lives in the section named in parentheses.
+
+- What is the vault buying today? -> `GET /api/agent/todays-allocation`
+- Is a holder payout real? -> `GET /api/agent/verify-claim?tx=<sig>` (Verify a payout yourself)
+- Was today's decision honest? -> `GET /api/agent/verify-decision` (Verify the decision itself)
+- What does the vault hold, and can I check it? -> `GET /api/agent/proof-of-reserves`
+- Is a token's agent actually autonomous? -> `GET /api/agent/evaluate?mint=<base58>` (Score an agent without us)
+- Run the allocation model on MY inputs -> `GET /api/agent/simulate?...`
+- Which certified RWAs exist on Solana? -> `GET /api/agent/rwas` (and `/api/agent/rwa?query=` for one)
+- Ask a free-form question -> `POST /api/agent/ask` (Ask the analyst)
+- Act for a holder with a burner, no keys -> Act for a holder, without ever touching their keys
+- The whole machine contract at once -> `GET /api/openapi`; MCP menu at `POST /api/mcp`
+
+Everything here is read-only public data; nothing moves funds or signs.
+
 ## Endpoints
 
 Base URL: `https://vaultbags.app`
