@@ -94,13 +94,23 @@ SPECIFIC holder ("what can I claim right now", "when does my lock end"), you do
 not ask for their wallet and you never receive their keys. The holder delegates
 to a burner wallet you control.
 
-1. The holder signs a delegation naming your burner as their delegate. Nothing
-   about it grants authority over their tokens: it is an off-chain signature (or
-   a dust transfer they send themselves), recorded and revocable.
-2. Your burner signs in normally (Sign-In With Solana) and gets a session token.
-3. You call the holder endpoints with that token. The server resolves WHOSE data
+1. Your burner signs in normally (Sign-In With Solana) and gets a session token.
+2. With that token, your burner asks to act for the holder:
+   `POST /api/delegation/request` with
+   `{"method":"message","kind":"agent","principal":"<holder main wallet>","scopes":{"intelligence":true,"governance":false,"raffle":false}}`.
+   The request lasts 10 minutes.
+3. The holder approves it from their own main wallet on the Delegate page
+   (`https://vaultbags.app/delegate`) by signing an off-chain message that names
+   your burner. Nothing about it grants authority over their tokens: it is
+   recorded and revocable. `GET /api/delegation/status` with your token reads
+   `"active": true` once they have signed.
+4. You call the holder endpoints with that token. The server resolves WHOSE data
    this is from the stored delegation and never from anything you send it, so a
    wallet address in your request cannot redirect the answer.
+
+Nothing is linked unless both wallets agree: your burner asks from its own
+session, and the holder signs with their own key. Neither side can be bound by
+the other alone.
 
 What a delegation carries, and what it refuses:
 
@@ -112,13 +122,14 @@ What a delegation carries, and what it refuses:
   delegable at all, by any means.
 
 If you are an agent rather than a person, say so when you request the
-delegation. An agent delegation is signed scope by scope: the holder reads a
-line per permission and signs that exact text, and the server stores what they
-signed. When the delegation is confirmed, the permissions are copied from that
-stored record and never from anything sent at confirmation time, so what was
-signed is what is enforced. Agents get claim and intelligence; governance and
-raffle require the holder to have signed for them explicitly. Only the signed
-message flow supports this, because a payment cannot express a list of scopes.
+delegation (`"kind":"agent"`, as above). An agent delegation is signed scope by
+scope: the holder reads a line per permission you asked for, may remove any of
+them before signing (never add one), and signs that exact text. The server
+stores exactly the set that signature covers, so what was signed is what is
+enforced. Ask only for what you need: claim is always included, intelligence is
+included unless you set it to false, and governance and raffle are granted only
+if you ask for them and the holder keeps them. Only the signed message flow
+supports this, because a payment cannot express a list of scopes.
 
 The guard that matters is on the money, not on the paperwork: for a claim, the
 destination is always the holder's own wallet, derived on the server and bound
