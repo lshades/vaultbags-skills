@@ -12,7 +12,7 @@ Works with Claude Code, Cursor, Codex and any `skills`-compatible agent. The sam
 
 ## What's inside
 
-- `skills/vaultbags`: the vault-data skill. REST + MCP endpoints, the ask lane (natural-language questions, x402 paid lane), usage notes and examples.
+- `skills/vaultbags-vault-data`: the vault-data skill. REST + MCP endpoints, the ask lane (natural-language questions, x402 paid lane), usage notes and examples.
 
 ## More machine surfaces
 
