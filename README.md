@@ -10,9 +10,20 @@ npx skills add lshades/vaultbags-skills
 
 Works with Claude Code, Cursor, Codex and any `skills`-compatible agent. The same skill is also served from the protocol's own domain at [vaultbags.app/skill.md](https://vaultbags.app/skill.md), and the machine surface is discoverable at [vaultbags.app/llms.txt](https://vaultbags.app/llms.txt).
 
+## Claude Code plugin
+
+```bash
+claude plugin marketplace add lshades/vaultbags-skills
+claude plugin install vaultbags@vaultbags
+```
+
+Installs the VaultBags MCP server (`https://vaultbags.app/api/mcp`) together with the skill below. The public tools need no key. When the server offers the personal tools, the first one you call asks you to sign in with your wallet on vaultbags.app; that access is read-only and you can end it at any time at [vaultbags.app/oauth/apps](https://vaultbags.app/oauth/apps).
+
 ## What's inside
 
 - `skills/vaultbags-vault-data`: the vault-data skill. REST + MCP endpoints, the ask lane (natural-language questions, x402 paid lane), usage notes and examples.
+- `.claude-plugin/` and `.mcp.json`: the Claude Code plugin and its marketplace (the MCP server plus this skill).
+- `server.json`: the server's entry for the official MCP Registry (remote, Streamable HTTP).
 
 ## More machine surfaces
 

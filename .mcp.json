@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "vaultbags": {
+      "type": "http",
+      "url": "https://vaultbags.app/api/mcp"
+    }
+  }
+}

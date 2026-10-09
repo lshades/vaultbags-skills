@@ -1,0 +1,14 @@
+{
+  "name": "vaultbags",
+  "displayName": "VaultBags",
+  "version": "1.0.0",
+  "description": "Read the VaultBags autonomous RWA treasury on Solana from Claude Code: the MCP server at vaultbags.app and the vault-data skill. Public data needs no key; your own vault needs a one-time wallet sign-in and stays read-only.",
+  "author": {
+    "name": "VaultBags",
+    "url": "https://vaultbags.app"
+  },
+  "homepage": "https://vaultbags.app/docs",
+  "repository": "https://github.com/lshades/vaultbags-skills",
+  "license": "MIT",
+  "keywords": ["solana", "rwa", "treasury", "mcp", "bags", "verifiable"]
+}

@@ -19,6 +19,7 @@ Match the intent, go straight to the path. Detail for each lives in the section 
 - What does the vault hold, and can I check it? -> `GET /api/agent/proof-of-reserves`
 - Is a token's agent actually autonomous? -> `GET /api/agent/evaluate?mint=<base58>` (Score an agent without us)
 - Run the allocation model on MY inputs -> `GET /api/agent/simulate?...`
+- Help someone launch a token that pays its holders in RWAs -> `GET /api/agent/prepare-launch?...` (a link they finish and sign)
 - Which certified RWAs exist on Solana? -> `GET /api/agent/rwas` (and `/api/agent/rwa?query=` for one)
 - Ask a free-form question -> `POST /api/agent/ask` (Ask the analyst)
 - Prove a paid call happened -> the `X-X402-Receipt` header, checked against `GET /.well-known/jwks.json` (Paid data products)
@@ -42,6 +43,7 @@ Prefer the REST mirror (plain GET, JSON back). The same tools are also served ov
 | `/api/agent/market-signals` | The quantitative signals behind today's allocation with per-asset reads (bullish/bearish/neutral), convictions and weights. |
 | `/api/agent/brain-vs-flat` | Honest track record: the daily line versus a fixed even split, the edge reported win or lose. |
 | `/api/agent/simulate?realYield=2.5&vix=28&...` | Runs the vault's allocation model on YOUR inputs; returns the weights it would choose, convictions and rationale. All params optional numbers: `realYield`, `breakevenInfl`, `dxyChangePct`, `goldMomentumPct`, `hyOas`, `vix`, `spx30dPct`, `tenYear`, `curve10y2y`, `fearGreed`. Deterministic: same inputs, same weights. |
+| `/api/agent/prepare-launch?name=<name>&symbol=<ticker>&description=<text>` | Drafts a Bags token launch with VaultBags preconfigured and returns `launchUrl`, a link to the VaultBags launcher with those fields filled in, plus `nextSteps`. Optional `website` (https) and `twitter` (handle or profile). Text only: the person who opens the link adds the image, sets the fee share and any initial buy, and signs in their own wallet; nothing is launched, signed or spent by this call. A field that breaks the launch rules comes back in `problems`. |
 | `/api/agent/projects` | Every treasury running on VaultBags (any Bags token can integrate). |
 | `/api/agent/project-treasury?mint=<base58>` | One project's live treasury (claim/lock pools, USD values, split) by SPL token mint. |
 | `/api/agent/evaluate?mint=<base58>` | Evaluate ANY token running on VaultBags as an agent: Autonomy Score, passport and treasury. The score splits into `protocolScore` (guarantees every VaultBags agent inherits) and `projectScore` (what that token earned itself). A fresh launch reads high on the protocol side and 0 on its own, so never read the composite alone as a track record. |
@@ -149,6 +151,8 @@ and delegating to somebody else revokes you automatically.
 
 `POST /api/agent/ask` with JSON `{"question":"<3-500 chars>"}` returns a natural-language answer grounded in the same read-only data. Free lane is rate-limited per caller per day. When exhausted (and the paid lane is live) the endpoint answers HTTP 402 with x402 payment requirements (USDC on Solana, commit-reveal memo binding); `GET /api/agent/ask` shows those requirements without spending anything. The 402 `accepts[]` lists every option currently offered, including a prepaid credit pack when available: one payment mints a one-time credit token, spent on later calls via the `X-CREDIT-TOKEN` header with no further transactions. One settled payment buys exactly one answer (or one pack), and paying callers get rolling conversation memory. Pricing: `https://vaultbags.app/pricing`.
 
+When a 402 also carries a `PAYMENT-REQUIRED` header, the same terms are offered in the x402 v2 standard and any x402 v2 client can pay with no VaultBags-specific code: sign the USDC transfer without sending it and retry the same request with the `PAYMENT-SIGNATURE` header. The facilitator named in the requirements checks the payment against those exact terms before the work starts and sends it only once the response is ready, so a request that fails before then costs nothing; the response carries `PAYMENT-RESPONSE` with the settled transaction. A 503 with `Retry-After` on that lane means the settlement is still landing: retry with the same `PAYMENT-SIGNATURE`, never a new payment. Credit packs are bought through the native lane.
+
 ## Score an agent without us
 
 `GET /api/agent/autonomy-spec` publishes the Autonomy Score's own rules: every dimension with its weight and scope, the formula behind each 0-100 sub-score, which endpoint each input comes from, and how independently verifiable that input is. Some inputs are anchored on-chain; one is our own assertion and says so.
@@ -165,6 +169,10 @@ For a client that takes a config file, the same server is two fields. The `type`
 { "mcpServers": { "vaultbags": { "type": "http", "url": "https://vaultbags.app/api/mcp" } } }
 ```
 
+## A holder's own vault, signed in
+
+When the MCP server's `tools/list` includes `get_my_vault`, `get_my_claims` and `get_my_performance`, they read the signed-in holder's own $VAULT position: what they can claim now, their claim history, and how the position has done. The first call to one answers HTTP 401 with a `WWW-Authenticate` challenge, per the MCP authorization spec (protected resource metadata at `/.well-known/oauth-protected-resource/api/mcp`, authorization server metadata at `/.well-known/oauth-authorization-server`, PKCE S256, a client ID metadata document or dynamic registration). The person signs in with their own wallet on vaultbags.app, sees what the app can and cannot do, and approves; the client then retries the call. The access is read-only and bound to that one wallet: it cannot claim, sign, move funds or vote. The holder ends every app's access at `https://vaultbags.app/oauth/apps`. The public tools never need a token.
+
 ## Use it from an OpenAI-compatible client
 
 Already speak the OpenAI chat API? Point any client at base URL `https://vaultbags.app/api/v1` with model `vaultbags-agent` (Cursor, Cline, Continue, the `openai` SDK). `GET /api/v1/models` lists it.
@@ -173,9 +181,9 @@ It is a facade, not a second door: every request forwards to `/api/agent/ask`, s
 
 ## Paid data products (same x402 flow)
 
-`GET /api/agent/ledger`: the ledger, the complete receipted decision history (every daily allocation since inception with raw signals, convictions, drivers, rationale and its on-chain receipt) plus the brain-vs-flat and shadow measurement series, one machine-readable export. `GET /api/agent/rwa-registry-live`: every certified RWA with a live market read in one call. Both answer 402 with their exact requirements when called bare, and accept `X-PAYMENT` or `X-CREDIT-TOKEN`.
+`GET /api/agent/ledger`: the ledger, the complete receipted decision history (every daily allocation since inception with raw signals, convictions, drivers, rationale and its on-chain receipt) plus the brain-vs-flat and shadow measurement series, one machine-readable export. `GET /api/agent/rwa-registry-live`: every certified RWA with a live market read in one call. Both answer 402 with their exact requirements when called bare, and accept `X-PAYMENT` or `X-CREDIT-TOKEN` (and `PAYMENT-SIGNATURE` whenever the 402 carries a `PAYMENT-REQUIRED` header).
 
-Every response settled on-chain (ask, the ledger, the registry batch) carries an `X-X402-Receipt` header: a short RS256 JWT stating what was paid (`tx_hash`, `payer_wallet`, `amount` in USDC atomic units, `pay_to`, `asset`, `resource`, `network`, a unique `jti`, `exp`), signed by the vault and verifiable offline against `GET /.well-known/jwks.json` with no call back to the vault. The on-chain transaction stays the source of truth; the receipt is its portable, signed wrapper. `npx vaultbags-cli verify receipt <jwt>` checks the signature, the claims, and asks the chain that the transfer actually landed where the receipt says. Credit spends carry no receipt (there is no per-call transaction to point at).
+Every response settled on-chain (ask, the ledger, the registry batch; paid with `X-PAYMENT` or `PAYMENT-SIGNATURE`) carries an `X-X402-Receipt` header: a short RS256 JWT stating what was paid (`tx_hash`, `payer_wallet`, `amount` in USDC atomic units, `pay_to`, `asset`, `resource`, `network`, a unique `jti`, `exp`), signed by the vault and verifiable offline against `GET /.well-known/jwks.json` with no call back to the vault. It also names what the call delivered (`delivery`): for an answer, `question_sha256` (the question with surrounding whitespace removed), `answer_sha256` (the answer exactly as served) and `tools`, the tools whose results the agent read; for an export, `content_sha256` over the body canonicalized (keys sorted recursively, arrays in order). The on-chain transaction stays the source of truth; the receipt is its portable, signed wrapper, and with the delivery it also proves which answer that payment bought. `npx vaultbags-cli verify receipt <jwt> --body=response.json` checks the signature, the claims, that the saved response is the one delivered, and asks the chain that the transfer actually landed where the receipt says. Credit spends carry no receipt (there is no per-call transaction to point at).
 
 ## Usage notes
 

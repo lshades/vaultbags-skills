@@ -1,0 +1,14 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "app.vaultbags/vaultbags",
+  "title": "VaultBags",
+  "description": "Autonomous RWA treasury on Solana: daily allocation, on-chain receipts, proofs, your own vault.",
+  "version": "1.0.0",
+  "websiteUrl": "https://vaultbags.app",
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://vaultbags.app/api/mcp"
+    }
+  ]
+}

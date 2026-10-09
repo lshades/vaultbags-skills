@@ -1,0 +1,14 @@
+{
+  "name": "vaultbags",
+  "description": "VaultBags for Claude Code: read an autonomous RWA treasury on Solana, and verify what it says.",
+  "owner": {
+    "name": "VaultBags"
+  },
+  "plugins": [
+    {
+      "name": "vaultbags",
+      "source": "./",
+      "description": "The VaultBags MCP server and its vault-data skill: today's allocation and its on-chain receipt, the treasury, proofs of reserves and payouts, the certified RWA registry and, once you sign in with your wallet, your own vault."
+    }
+  ]
+}
